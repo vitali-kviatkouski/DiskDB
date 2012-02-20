@@ -16,15 +16,8 @@
 
 package com.kelt.disk.db.web;
 
-import java.util.Locale;
-
-import com.vaadin.data.Property;
-import com.vaadin.data.Property.ValueChangeEvent;
 import com.vaadin.terminal.Sizeable;
-import com.vaadin.ui.DateField;
-import com.vaadin.ui.InlineDateField;
-import com.vaadin.ui.Label;
-import com.vaadin.ui.Select;
+import com.vaadin.ui.Tree;
 import com.vaadin.ui.Window;
 
 /**
@@ -49,53 +42,32 @@ public class DiskDBApplication extends com.vaadin.Application {
     }
 
     private void setUpWindow(Window window) {
-        // The locale in which we want to have the language
-        // selection list
-        Locale displayLocale = Locale.ENGLISH;
-
-        // All known locales
-        final Locale[] locales = Locale.getAvailableLocales();
-        // Allow selecting a language. We are in a constructor of a
-        // CustomComponent, so preselecting the current
-        // language of the application can not be done before
-        // this (and the selection) component are attached to
-        // the application.
-        final Select select = new Select("Select a language") {
-            @Override
-            public void attach() {
-                setValue(getLocale());
-            }
-        };
-        for (int i = 0; i < locales.length; i++) {
-            select.addItem(locales[i]);
-            select.setItemCaption(locales[i],
-                    locales[i].getDisplayName(displayLocale));
-
-            // Automatically select the current locale
-            if (locales[i].equals(getLocale()))
-                select.setValue(locales[i]);
+        Tree tree = new Tree();
+        fillTreeComponent(tree, createTestNodes(), null);
+        window.addComponent(tree);
+    }
+    
+    private void fillTreeComponent(Tree tree, TreeNode node, Object parentId) {
+        tree.addItem(node.getId());
+        tree.setItemCaption(node.getId(), node.getName());
+        boolean hasChildren = !node.getChildNodes().isEmpty();
+        tree.setChildrenAllowed(node.getId(), hasChildren);
+        if (parentId != null) {
+            tree.setParent(node.getId(), parentId);
         }
-        window.addComponent(select);
-
-        // Locale code of the selected locale
-        final Label localeCode = new Label("");
-        window.addComponent(localeCode);
-
-        // A date field which language the selection will change
-        final InlineDateField date = new InlineDateField(
-                "Calendar in the selected language");
-        date.setResolution(DateField.RESOLUTION_DAY);
-        window.addComponent(date);
-
-        // Handle language selection
-        select.addListener(new Property.ValueChangeListener() {
-            public void valueChange(ValueChangeEvent event) {
-                Locale locale = (Locale) select.getValue();
-                date.setLocale(locale);
-                localeCode.setValue("Locale code: " + locale.getLanguage()
-                        + "_" + locale.getCountry());
+        if (hasChildren) {
+            for (TreeNode chNode : node.getChildNodes()) {
+                fillTreeComponent(tree, chNode, node.getId());
             }
-        });
-        select.setImmediate(true);
+        }
+    }
+    
+    private TreeNode createTestNodes() {
+        TreeNode root = new TreeNode(-1L, "Disks");
+        root.addChildNode(1L, "Disk 1").addChildNode(100L, "Films 1");
+        root.addChildNode(2L, "Disk 2").addChildNode(200L, "Films 2");
+        root.addChildNode(3L, "Disk 3").addChildNode(300L, "Films 3");
+        root.addChildNode(4L, "Disk 4").addChildNode(400L, "Games 1");
+        return root;
     }
 }
